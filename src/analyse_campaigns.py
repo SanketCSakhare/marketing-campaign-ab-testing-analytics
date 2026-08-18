@@ -21,6 +21,11 @@ REQUIRED = {
 }
 
 
+def safe_divide(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
+    """Divide KPI inputs while treating zero denominators as undefined."""
+    return numerator.div(denominator.where(denominator.ne(0)))
+
+
 def validate(df: pd.DataFrame) -> None:
     missing = REQUIRED - set(df.columns)
     if missing:
@@ -39,10 +44,12 @@ def validate(df: pd.DataFrame) -> None:
 
 def add_metrics(df: pd.DataFrame) -> pd.DataFrame:
     result = df.copy()
-    result["ctr"] = result["website_clicks"] / result["impressions"]
-    result["click_to_purchase_rate"] = result["purchases"] / result["website_clicks"]
-    result["cpc_gbp"] = result["spend_gbp"] / result["website_clicks"]
-    result["cpa_gbp"] = result["spend_gbp"] / result["purchases"]
+    result["ctr"] = safe_divide(result["website_clicks"], result["impressions"])
+    result["click_to_purchase_rate"] = safe_divide(
+        result["purchases"], result["website_clicks"]
+    )
+    result["cpc_gbp"] = safe_divide(result["spend_gbp"], result["website_clicks"])
+    result["cpa_gbp"] = safe_divide(result["spend_gbp"], result["purchases"])
     return result
 
 
@@ -56,10 +63,12 @@ def summarise(df: pd.DataFrame) -> pd.DataFrame:
         add_to_cart=("add_to_cart", "sum"),
         purchases=("purchases", "sum"),
     )
-    totals["ctr"] = totals["website_clicks"] / totals["impressions"]
-    totals["click_to_purchase_rate"] = totals["purchases"] / totals["website_clicks"]
-    totals["cpc_gbp"] = totals["spend_gbp"] / totals["website_clicks"]
-    totals["cpa_gbp"] = totals["spend_gbp"] / totals["purchases"]
+    totals["ctr"] = safe_divide(totals["website_clicks"], totals["impressions"])
+    totals["click_to_purchase_rate"] = safe_divide(
+        totals["purchases"], totals["website_clicks"]
+    )
+    totals["cpc_gbp"] = safe_divide(totals["spend_gbp"], totals["website_clicks"])
+    totals["cpa_gbp"] = safe_divide(totals["spend_gbp"], totals["purchases"])
     return totals
 
 
